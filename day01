@@ -1,0 +1,211 @@
+自动类型推导，
+
+“自动”就是让计算机去做，而不是人去做，相对的是“手动”。
+“类型”指的是操作目标，出来的是编译阶段的类型，而不是数值。
+“推导”就是演算、运算，把隐含的值给算出来。
+
+除了简化代码，auto 还避免了对类型的“硬编码”，也就是说变量类型不是“写死”的，
+而是能够“自动”适应表达式的类型。比如，你把 map 改为 unordered_map，那么后面
+的代码都不用动。这个效果和类型别名有点像，但你不需要写出 typedef 或
+者 using，全由 auto“代劳”。
+
+认识auto
+
+首先，auto 的“自动推导”能力只能用在“初始化”的场合。
+具体来说，就是赋值初始化或者花括号初始化（初始化列表、Initializer list），变量右边
+必须要有一个表达式（简单、复杂都可以）。这样你才能在左边放上 auto，编译器才能找
+到表达式，帮你自动计算类型。
+如果不是初始化的形式，只是“纯”变量声明，那就无法使用 auto。因为这个时候没有表
+达式可以让 auto 去推导
+
+这里还有一个特殊情况，在类成员变量初始化的时候，目前的 C++ 标准不允
+许使用 auto 推导类型。所以，在类里你还是要老老实实地去“手动推导类型”。
+
+auto的基本规则
+auto 总是推导出“值类型”，绝不会是“引用”；
+auto 可以附加上 const、volatile、*、& 这样的类型修饰符，得到新的类型。
+
+
+认识decltype
+“自动类型推导”要求必须从表达式推导，那在没有表达式的时候，该怎么办呢？
+
+其实解决思路也很简单，就是“自己动手，丰衣足食”，自己带上表达式，这样就走到哪里
+都不怕了。
+
+decltype 的形式很像函数，后面的圆括号里就是可用于计算类型的表达式（和 sizeof 有点
+类似），其他方面就和 auto 一样了，也能加上 const、*、& 来修饰。
+
+它也有个缺点，就是写起来略麻烦，特别在用于初始化的时候，表达式要重复两次
+（左边的类型计算，右边的初始化），把简化代码的优势完全给抵消了
+
+C++14 就又增加了一个“decltype(auto)”的形式，既可以精确推导类型，又能像
+auto 一样方便使用。
+
+
+使用auto/decltype
+在变量声明时应该尽量多用
+auto。
+
+因为 auto 和 decltype 不是“硬编码”的类型，所以用好它们可以让代码更清晰，减少
+后期维护的成本。
+
+"""
+//2022 by junsu
+//
+#include <cassert>
+
+#include <iostream>
+#include <string>
+#include <vector>
+#include <set>
+#include <map>
+#include <type_traits>
+
+#include <signal.h>
+
+void case1()
+{
+	int i = 0;
+	double x =1.0;
+
+	std::string str = "hello";
+	std::map<int , std::string> m = {{1,"a"},{2,"b"}};
+
+	std::map<int , std::string>::const_iterator iter = m.begin();
+
+	
+}
+
+void case2()
+{
+	auto i = 0;
+
+	auto x = 1.0;
+
+	auto str = "hello";
+
+	std::map<int ,std::string> m = {{1,"a"},{2,"b"}};
+
+	auto iter = m.begin();
+
+	auto f = std::bind1st(std::less<int>(),2);
+
+}
+
+void case3(){
+	auto x = 0L;
+	auto y = &x;
+	auto z {&x};
+}
+
+
+class X final
+{
+	int a = 10;
+};
+
+
+
+
+void case4()
+{
+	auto x = 10L;
+	auto& x1 = x;
+	auto* x2 = &x;
+	const auto& x3 = x;
+	auto x4 = &x3;
+
+	using namespace std;
+
+	cout<< *x2 <<endl;
+	cout<< *x4 <<endl;
+}
+
+void case5()
+{
+	int x = 0;
+	decltype(x) x1;
+	decltype(x)& x2 = x;
+	decltype(x)* x3;
+	decltype(&x) x4;
+	decltype(&x)* x5;
+	decltype(x2) x6=x2;
+}
+
+void case6()
+{
+	int x = 0;
+	
+	decltype(auto) x1 = (x);
+	decltype(auto) x2 = &x;
+	decltype(auto) x3 = x1;
+
+	assert(std::is_lvalue_reference<decltype(x1)>::value);
+	assert(std::is_pointer<decltype(x2)>::value);
+	assert(std::is_lvalue_reference<decltype(x3)>::value);
+
+}
+
+
+auto get_a_set()
+{
+	std::set<int> s = {1,2,3};
+
+	return s;
+}
+
+void case7()
+{
+	using namespace std;
+
+	vector<int> v = {2,3,5,7,11};
+
+	for(const auto& i : v){
+		cout<< i << ",";
+	}
+
+	cout<<endl;
+
+	for(auto& i:v){
+		i++;
+		cout<< i <<",";
+	}
+	cout<<endl;
+}
+
+class DemoClass final
+{
+	public:
+		using sig_func_ptr_t = decltype(&signal);
+
+	public:
+		using set_type   = std::set<int>;
+	private:
+		set_type  m_set;
+
+		using iter_type = decltype(m_set.begin());
+		iter_type m_pos;
+};
+
+int main()
+{
+	using namespace std;
+
+	case1();
+	case2();
+	case3();
+	case4();
+	case5();
+	case6();
+	case7();
+
+	cout<<"auto/decltype demo"<<endl;
+}
+
+
+
+
+
+
+
+"""
