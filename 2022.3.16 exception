@@ -1,0 +1,84 @@
+异常只是C++为了解决问题提出的一种解决方案。
+异常处理的流程是完全独立的，throw 抛出异常后就可以不用管了，错误处理代码都集
+中在专门的 catch 块里。这样就彻底分离了业务逻辑与错误逻辑，看起来更清楚
+
+异常绝对不能被忽略，一定要被处理
+如果你有意或者无意不写 catch 捕获异常，那
+么它会一直向上传播出去，直至找到一个能够处理的 catch 块。如果实在没有，那就会
+导致程序立即停止运行，明白地提示你发生了错误，而不会“坚持带病工作”
+
+异常可以用在错误码无法使用的场合
+这也算是 C++ 的“私人原因”。因为它比 C 语
+言多了构造 / 析构函数、操作符重载等新特性，有的函数根本就没有返回值，或者返回
+值无法表示错误，而全局的 errno 实在是“太不优雅”了，与 C++ 的理念不符，所以
+也必须使用异常来报告错误
+
+异常的用法和使用方式
+用try将可能发生异常的编码包裹起来，然后编写catch模块捕获异常处理
+
+罗剑峰老师总结的使用异常的几条经验
+1. 不允许被忽略的错误；
+2. 极少数情况下才会发生的错误；
+3. 严重影响正常流程，很难恢复到正常状态的错误；
+4. 无法本地处理，必须“穿透”调用栈，传递到上层才能被处理的错误
+
+
+codeing
+
+
+#include <iostream>
+#include <stdexcept>
+										
+using namespace std;
+
+class my_exception : public std::runtime_error
+{
+public:
+    using this_type     = my_exception;			
+    using super_type    = std::runtime_error;
+public:
+    my_exception(const char* msg):
+        super_type(msg)
+    {}
+
+    my_exception() = default;
+   ~my_exception() = default;
+private:
+    int code = 0;
+};
+
+[[noreturn]]
+void raise(const char* msg)
+{
+    throw my_exception(msg);
+    //throw runtime_error(msg);
+}
+
+void case1()
+try
+{
+    raise("error occured");
+}
+catch(const exception& e)
+{
+    cout << e.what() << endl;
+}
+
+void case2() noexcept
+{
+    cout << "noexcept" << endl;
+}
+
+void case3() noexcept
+{
+    throw "Oh My God";
+}
+
+int main()
+{
+    case1();
+    case2();
+    //case3();
+
+    cout << "exception demo" << endl;
+}
