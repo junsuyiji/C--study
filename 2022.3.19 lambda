@@ -1,0 +1,228 @@
+# 函数式编程
+
+在语法层面上，C/C++ 里的函数是比较特别的。虽然有函数类型，但不存在对应类型的变
+量，不能直接操作，只能用指针去间接操作（即函数指针），这让函数在类型体系里显得有
+点“格格不入”。
+
+函数在用法上也有一些特殊之处。在 C/C++ 里，所有的函数都是全局的，没有生存周期的
+概念（static、名字空间的作用很弱，只是简单限制了应用范围，避免名字冲突）。而且函
+数也都是平级的，不能在函数里再定义函数，也就是不允许定义嵌套函数、函数套函数
+
+所以，在面向过程编程范式里，函数和变量虽然是程序里最关键的两个组成部分，但却因为
+没有值、没有作用域而不能一致地处理。函数只能是函数，变量只能是变量，彼此之间虽不
+能说是“势同水火”，但至少是“泾渭分明”。
+
+## lambda
+
+lambda和普通函数最大，最根本的区别：lambda采用赋值的方式，存入了一个变量。因为lambda表达式是一个变量，所以我们可以限制他的作用域和生命周期，实现函数局部化，而且lambda就像变量一样可以加减，组合，运算，几个简单的功能组合成一个复杂的功能。
+
+eg：捕获外部变量
+
+### 使用lambda的三个要点：语法形式，变量捕获规则，还有泛型的用法。
+
+#### 语法形式
+
+首先你要知道，C++ 没有为 lambda 表达式引入新的关键字，并没有“lambda”这样的
+词汇，而是用了一个特殊的形式“[]”，术语叫“lambda 引出符”（lambda
+introducer）。
+在 lambda 引出符后面，就可以像普通函数那样，用圆括号声明入口参数，用花括号定义
+函数体
+
+因为 lambda 表达式毕竟不是普通的变量，所以 C++ 也鼓励程序员尽量“匿名”使
+用 lambda 表达式。也就是说，它不必显式赋值给一个有名字的变量，直接声明就能用，
+免去你费力起名的烦恼。
+
+#### 变量捕获
+
+“[=]”表示按值捕获所有外部变量，表达式内部是值的拷贝，并且不能修改；
+“[&]”是按引用捕获所有外部变量，内部以引用的方式使用，可以修改；
+你也可以在“[]”里明确写出外部变量名，指定按值或者按引用捕获，C++ 在这里给予
+了非常大的灵活性。
+
+注：用引用捕获时，最好注明变量名
+
+#### 泛型lambda
+
+在 C++14 里，lambda 表达式又多了一项新本领，可以实现“泛型化”，相当于简化了的
+模板函数，具体语法还是利用了“多才多艺”的 auto
+
+这个新特性在写泛型函数的时候非常方便，摆脱了冗长的模板参数和函数参数列表。如果你
+愿意的话，可以尝试在今后的代码里都使用 lambda 来代替普通函数，能够少写很多代
+码。
+
+
+
+```cpp
+#include <iostream>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <functional>
+
+using namespace std;
+
+void my_square(int x)
+{
+    cout << x*x << endl;
+}
+
+void case1()
+{
+    auto pfunc = &my_square;
+
+    (*pfunc)(3);
+    pfunc(3);
+
+    auto func = [](int x)
+    {
+        cout << x*x << endl;
+    };
+
+    func(3);
+}
+
+void case2()
+{
+    int n = 10;
+
+    auto func = [=](int x)
+    {
+        cout << x*n << endl;
+    };
+
+    func(3);
+}
+
+void case3()
+{
+    auto f1 = [](){};
+
+    auto f2 = []()
+        {
+            cout << "lambda f2" << endl;
+
+            auto f3 = [](int x)
+            {
+                return x*x;
+            };// lambda f3
+
+            cout << f3(10) << endl;
+        };  // lambda f2
+
+    f1();
+    f2();
+
+    //f1 = f2;
+
+    vector<int> v = {3, 1, 8, 5, 0};
+
+    cout << *find_if(begin(v), end(v),
+                [](int x)
+                {
+                    return x >= 5;
+                }
+            )
+         << endl;
+}
+
+void case4()
+{
+    int x = 33;
+
+    auto f1 = [=]()
+    {
+        //x += 10;
+        cout << x << endl;
+    };
+
+    auto f2 = [&]()
+    {
+        x += 10;
+    };
+
+    auto f3 = [=, &x]()
+    {
+        x += 20;
+    };
+
+    f1();
+    f2();
+    cout << x << endl;
+    f3();
+    cout << x << endl;
+}
+
+class DemoLambda final
+{
+public:
+    DemoLambda() = default;
+   ~DemoLambda() = default;
+private:
+    int x = 0;
+public:
+    auto print()
+    {
+        //auto f = [=]()
+
+        return [this]()
+        {
+            cout << "member = " << x << endl;
+        };
+
+    }
+};
+
+void case5()
+{
+    DemoLambda obj;
+
+    auto f = obj.print();
+
+    f();
+}
+
+void case6()
+{
+    auto f = [](const auto& x)
+    {
+        return x + x;
+    };
+
+    cout << f(3) << endl;
+    cout << f(0.618) << endl;
+
+    string str = "matrix";
+    cout << f(str) << endl;
+}
+
+// demo for function + lambda
+class Demo final
+{
+public:
+    using func_type = std::function<void()>;
+public:
+    func_type print = [this]()
+    {
+        cout << "value = " << m_value << endl;
+        cout << "hello function+lambda" << endl;
+    };
+private:
+    int m_value = 10;
+};
+
+int main()
+{
+    case1();
+    case2();
+    case3();
+    case4();
+    case5();
+    case6();
+
+    Demo d;
+    d.print();
+
+    cout << "lambda demo" << endl;
+}
+```
+
