@@ -1,0 +1,75 @@
+STL简介
+standard  tamplate libary(STL)是C++标准库的一个重要组成部分，它实现了常用的数据结构和算法。
+
+STL由算法，容器，迭代器，适配器，仿函数（函数对象），空间适配器组成
+
+容器：容器首先是一个模板类，在类中实现对数据的操作，包含这样类的实现就叫做一个容器。eg：vector,list,queue,deque,Priority queue,set,multiset,map,multimap
+
+算法：。。。。。。
+
+迭代器：对指针的一种泛化，底层有指针实现，是容器和算法的桥梁
+
+适配器：
+
+仿函数：是类的对象，一种可回调机制 
+
+空间配置器：STL自己的内存池
+
+
+
+template编程和迭代器介绍
+template编程
+基本语法 template <typename/class T>
+template <typename T>
+T add(const T lva,const T rva)
+{
+  T a ;
+  a = lva + rva;
+  return a;
+}
+类模板：C++11不仅支持对函数的模板化，而且支持对类的模板
+
+template <class T>
+class Myclass
+{
+  T a;
+  public:
+    T add(const T lva,const T lva);
+};
+
+template <class T>
+T Myclass<T>::add(const T lva,const T rva)
+{
+  a = lva + rva;
+  return a;
+}；
+//这是一个类模板，程序中给出的模板并不能使用，必须实例化
+//Myclass<int> A; 或者 Myclass<double> B;
+
+
+typename和class是模板中的两个关键词，定义的时候咩有区别
+class Myclass{
+  public:
+    Myclass();
+    typedef int test;
+}
+template <class T>
+class Myclass2{
+  public:
+    Myclass2();
+    T::test *a;
+}
+//上述code是错误的
+
+
+迭代器
+常见的迭代器有五种：输入、输出，前向，双向，随机迭代器
+iterator是一种对象，它能够遍历标准模板容器库容器中的部分或者全部元素，每个迭代器对象代表容器中确定的地址。
+简单来说：迭代器是一直给你检查容器内元素并遍历元素的可带泛型数据类型
+尝试写一个迭代器
+定义一个Iterator.h头文件
+struct input_iterator_tag{};
+struct output_iterator_tag{};
+struct forward_iterator_tag : public input_iterator_tag {};
+struct bidirectional_iterator_tag :public forward_iterator_tag {};
+struct random_access_iterator_tag :public bidirectional_tag {};
